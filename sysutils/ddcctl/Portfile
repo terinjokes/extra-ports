@@ -1,0 +1,24 @@
+# -*- coding: utf-8; mode: tcl; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- vim:fenc=utf-8:ft=tcl:et:sw=4:ts=4:sts=4
+PortSystem          1.0
+PortGroup           github 1.0
+
+github.setup        kfix ddcctl d11c3f4a63a090923b55ec93f363b381f2729d0c
+version             20170207
+
+categories          sysutils
+platforms           darwin
+license             GPL-3
+
+maintainers         gmail.com:terinjokes
+description         DDC monitor controls
+long_description    DDC monitor controls for macOS
+
+homepage            https://github.com/kfix/ddcctl
+checksums           rmd160  15ca1ef19e1618c7a470a9c306d4d81ccffe4a5f \
+                    sha256  b61c4a6236e92d7d8351fd06d3afdcc35234aa886731f20c0efe36f4c8921cfd
+
+use_configure       no
+
+destroot {
+    xinstall ${worksrcpath}/ddcctl ${destroot}${prefix}/bin/${name}
+}
