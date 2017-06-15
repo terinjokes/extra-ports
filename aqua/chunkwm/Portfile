@@ -1,0 +1,79 @@
+# -*- coding: utf-8; mode: tcl; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- vim:fenc=utf-8:ft=tcl:et:sw=4:ts=4:sts=4
+PortSystem          1.0
+PortGroup           github 1.0
+
+github.setup        koekeishiya chunkwm 0.0.36
+categories          aqua
+platforms           darwin
+license             MIT
+
+maintainers         gmail.com:terinjokes
+description         Tiling window manager for MacOS based on plugin architecture
+long_description    ${name}: ${description}
+
+homepage            https://github.com/koekeishiya/chunkwm
+checksums           rmd160  26f056f53dc4ff5272302ab5d5dea3ff95f70bf5 \
+                    sha256  5de23e316a625da2abbcdab37bcc5a013ba6271410871e52f04855d700393090
+
+supported_archs     x86_64
+use_configure       no
+
+default_variants        +border +tiling
+variant border          description {Builds "border" plugin} {}
+variant ffm             description {Builds "focus follows mouse" plugin} {}
+variant tiling          description {Builds "tiling" plugin} {}
+variant transparency    description {Builds "transparency" plugin} {}
+
+set plist-name          com.koekeishiya.chunkwm.plist
+
+post-extract {
+    file copy -force ${filespath}/${plist-name} ${worksrcpath}
+    reinplace "s|{PREFIX}|${prefix}|g" ${worksrcpath}/${plist-name}
+    reinplace "s|~/.chunkwm_plugins|${prefix}/lib/chunkwm/plugins|" ${worksrcpath}/examples/chunkwmrc
+}
+
+build {
+    system "cd ${worksrcpath} && make install"
+    system "cd ${worksrcpath}/src/chunkc && make"
+
+    if {[variant_isset border]} {
+        system "cd ${worksrcpath}/src/plugins/border && make install"
+    }
+
+    if {[variant_isset ffm]} {
+        system "cd ${worksrcpath}/src/plugins/ffm && make install"
+    }
+
+    if {[variant_isset tiling]} {
+        system "cd ${worksrcpath}/src/plugins/tiling && make install"
+    }
+
+    if {[variant_isset transparency]} {
+        system "cd ${worksrcpath}/src/plugins/transparency && make install"
+    }
+}
+
+destroot {
+    xinstall -m 755 ${worksrcpath}/bin/chunkwm ${destroot}${prefix}/bin/chunkwm
+    xinstall -m 755 ${worksrcpath}/src/chunkc/bin/chunkc ${destroot}${prefix}/bin/chunkc
+
+    xinstall -d -m 755 ${destroot}${prefix}/lib/chunkwm/plugins
+    xinstall -m 644 {*}[glob ${worksrcpath}/plugins/*] ${destroot}${prefix}/lib/chunkwm/plugins
+
+    xinstall -d -m 755 ${destroot}${prefix}/Library/LaunchAgents
+    xinstall -m 644 ${worksrcpath}/${plist-name} ${destroot}${prefix}/Library/LaunchAgents
+
+    xinstall -d -m 755 ${destroot}${prefix}/share/${name}
+    xinstall -m 644 ${worksrcpath}/examples/chunkwmrc ${destroot}${prefix}/share/${name}/chunkwmrc
+}
+
+notes "******************************************************
+To start using chunkwm, follow these instructions:
+  1) Copy the example config from ${prefix}/share/${name}/chunkwmrc
+     into your home directory:
+    cp ${prefix}/share/${name}/chunkwmrc ~/.chunkwmrc
+  2) Symlink prepared agent and start it:
+    cd ~/Library/LaunchAgents
+    ln -s ${prefix}/Library/LaunchAgents/${plist-name}
+    launchctl load -w ~/Library/LaunchAgents/${plist-name}
+******************************************************"
