@@ -1,0 +1,57 @@
+# -*- coding: utf-8; mode: tcl; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- vim:fenc=utf-8:ft=tcl:et:sw=4:ts=4:sts=4
+PortSystem          1.0
+PortGroup           github 1.0
+
+github.setup        kubernetes kubernetes 1.7.0 v
+name                kubectl
+categories          devel
+platforms           darwin
+license             Apache-2.0
+
+maintainers         gmail.com:terinjokes
+description         Kubernetes command-line interface
+long_description    ${name}: ${description}
+
+depends_build       port:go
+
+homepage            https://github.com/kubernetes/kubernetes
+checksums           rmd160  249e283ad2e10e20fac8060fd10055ded582ecc0 \
+                    sha256  6040a0cba6a680b31aaaeb923d27b308bd571b406b7de6b8cf57436d85fab597
+
+supported_archs     x86_64
+use_configure       no
+use_parallel_build  no
+build.target        kubectl
+build.env           GOPATH=${workpath}/go
+
+post-extract {
+    file mkdir ${workpath}/go/src/github.com/kubernetes
+    ln -sf ${worksrcpath} ${workpath}/go/src/github.com/kubernetes/kubernetes
+    file mkdir ${worksrcpath}/src/github.com/kubernetes
+    ln -sf ${worksrcpath} ${worksrcpath}/src/github.com/kubernetes/kubernetes
+}
+
+destroot {
+    xinstall -d ${destroot}${prefix}/bin
+    xinstall -m 755 ${worksrcpath}/_output/bin/kubectl ${destroot}${prefix}/bin/${name}
+
+    if {[variant_isset bash_completion]} {
+        set completions_path ${prefix}/share/bash-completion/completions
+        xinstall -d ${destroot}${completions_path}
+        system "${destroot}${prefix}/bin/${name} completion bash >> ${destroot}${completions_path}/kubectl"
+    }
+    
+    if {[variant_isset zsh_completion]} {
+        set site-functions ${prefix}/share/zsh/site-functions
+        xinstall -d ${destroot}${site-functions}
+        system "${destroot}${prefix}/bin/${name} completion zsh >> ${destroot}${site-functions}/kubectl"
+    }
+}
+
+variant bash_completion {
+    depends_run-append path:etc/bash_completion:bash-completion
+}
+
+variant zsh_completion description {Install kubectl zsh completion file} {
+    depends_run-append path:${prefix}/bin/zsh:zsh
+}
